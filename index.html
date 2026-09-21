@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Scanner PDF</title>
+<style>
+html,body{margin:0;height:100%;background:#000;font:600 16px system-ui,sans-serif;color:#fff;overflow:hidden}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#f{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 10px #e5322d;transition:box-shadow .2s}
+#f.g{box-shadow:inset 0 0 0 10px #22c55e}
+#w{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
+#w.on{opacity:.85;transition:none}
+#b{position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;justify-content:center;padding:18px 18px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#000a)}
+button{font:inherit;color:#fff;background:#222c;border:1px solid #fff5;border-radius:999px;padding:12px 20px}
+#pdf{background:#22c55e;border-color:#22c55e;color:#04220f}
+button:disabled{opacity:.35}
+#m{position:absolute;top:24px;left:0;right:0;text-align:center;text-shadow:0 1px 4px #000}
+</style>
+</head>
+<body>
+<video id="v" playsinline muted autoplay></video>
+<div id="f"></div><div id="w"></div>
+<div id="m">Enquadre o documento inteiro</div>
+<div id="b">
+  <button id="undo" disabled>Desfazer</button>
+  <button id="pdf" disabled>Gerar PDF (0)</button>
+</div>
+<script>
+const $=id=>document.getElementById(id), v=$('v'), f=$('f'), pages=[];
+const sc=document.createElement('canvas'), sx=sc.getContext('2d',{willReadFrequently:true});
+let last=null, since=0, armed=true, busy=false;
+
+// Detecta a maior região clara no centro; "ok" só se estiver inteira dentro do quadro
+function detect(){
+  if(!v.videoWidth) return null;
+  const w=160, h=Math.round(w*v.videoHeight/v.videoWidth), N=w*h;
+  sc.width=w; sc.height=h; sx.drawImage(v,0,0,w,h);
+  const d=sx.getImageData(0,0,w,h).data, g=new Uint8Array(N), hi=new Array(256).fill(0);
+  for(let i=0;i<N;i++){g[i]=(d[4*i]*77+d[4*i+1]*150+d[4*i+2]*29)>>8; hi[g[i]]++}
+  let sum=0; for(let t=0;t<256;t++) sum+=t*hi[t];
+  let sb=0, wb=0, best=0, th=128;
+  for(let t=0;t<256;t++){
+    wb+=hi[t]; if(!wb) continue; const wf=N-wb; if(!wf) break;
+    sb+=t*hi[t]; const mb=sb/wb, mf=(sum-sb)/wf, s=wb*wf*(mb-mf)**2;
+    if(s>best){best=s; th=t}
+  }
+  const seen=new Uint8Array(N); let top=null;
+  for(let s0=0;s0<N;s0++){
+    if(seen[s0]||g[s0]<=th) continue;
+    const st=[s0]; seen[s0]=1;
+    const c={n:0,x0:w,x1:0,y0:h,y1:0,tl:[0,1e9],br:[0,-1e9],tr:[0,-1e9],bl:[0,1e9]};
+    while(st.length){
+      const p=st.pop(), x=p%w, y=(p/w)|0, a=x+y, b=x-y; c.n++;
+      if(x<c.x0)c.x0=x; if(x>c.x1)c.x1=x; if(y<c.y0)c.y0=y; if(y>c.y1)c.y1=y;
+      if(a<c.tl[1])c.tl=[p,a]; if(a>c.br[1])c.br=[p,a];
+      if(b>c.tr[1])c.tr=[p,b]; if(b<c.bl[1])c.bl=[p,b];
+      for(const q of [p-1,p+1,p-w,p+w]){
+        if(q<0||q>=N||(q%w-x>1)||(x-q%w>1)||seen[q]||g[q]<=th) continue;
+        seen[q]=1; st.push(q);
+      }
+    }
+    if(!top||c.n>top.n) top=c;
+  }
+  if(!top||top.n<N*.25) return null;
+  const P=[top.tl,top.tr,top.br,top.bl].map(k=>[(k[0]%w)/w,((k[0]/w)|0)/h]);
+  const A=Math.abs(P.reduce((s,p,i)=>{const q=P[(i+1)%4];return s+p[0]*q[1]-q[0]*p[1]},0))/2*N;
+  const inside=top.x0>1&&top.y0>1&&top.x1<w-2&&top.y1<h-2;
+  return inside&&top.n/A>.75?P:null;
+}
+
+function warp(P){
+  const W0=v.videoWidth, H0=v.videoHeight, c=document.createElement('canvas');
+  c.width=W0; c.height=H0; const x=c.getContext('2d'); x.drawImage(v,0,0);
+  const src=x.getImageData(0,0,W0,H0).data;
+  const [tl,tr,br,bl]=P.map(p=>[p[0]*W0,p[1]*H0]), L=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+  let W=(L(tl,tr)+L(bl,br))/2, H=(L(tl,bl)+L(tr,br))/2, k=Math.min(1,1700/Math.max(W,H));
+  W=Math.round(W*k); H=Math.round(H*k);
+  const o=document.createElement('canvas'); o.width=W; o.height=H;
+  const ox=o.getContext('2d'), out=ox.createImageData(W,H), D=out.data;
+  for(let j=0;j<H;j++){
+    const t=.01+.98*j/H;
+    for(let i=0;i<W;i++){
+      const u=.01+.98*i/W;
+      const px=(1-t)*((1-u)*tl[0]+u*tr[0])+t*((1-u)*bl[0]+u*br[0]);
+      const py=(1-t)*((1-u)*tl[1]+u*tr[1])+t*((1-u)*bl[1]+u*br[1]);
+      const s=((py|0)*W0+(px|0))*4, e=(j*W+i)*4;
+      D[e]=src[s]; D[e+1]=src[s+1]; D[e+2]=src[s+2]; D[e+3]=255;
+    }
+  }
+  ox.putImageData(out,0,0); return o;
+}
+
+async function capture(P){
+  busy=true; armed=false;
+  const c=warp(P), blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));
+  pages.push({w:c.width,h:c.height,jpg:new Uint8Array(await blob.arrayBuffer())});
+  ui(); navigator.vibrate&&navigator.vibrate(60);
+  $('w').classList.add('on'); setTimeout(()=>$('w').classList.remove('on'),60);
+  busy=false;
+}
+
+function ui(){
+  $('pdf').textContent=`Gerar PDF (${pages.length})`;
+  $('pdf').disabled=$('undo').disabled=!pages.length;
+  $('m').textContent=pages.length?'Página salva. Vire a folha ou gere o PDF':'Enquadre o documento inteiro';
+}
+
+setInterval(()=>{
+  if(busy) return;
+  const P=detect();
+  f.className=P?'g':'';
+  if(!P){last=null; armed=true; return}
+  if(!armed) return;
+  const now=performance.now();
+  if(last&&P.every((p,i)=>Math.abs(p[0]-last[i][0])<.02&&Math.abs(p[1]-last[i][1])<.02)){
+    if(now-since>700) capture(P);
+  } else {since=now; last=P}
+},150);
+
+// PDF mínimo: uma imagem JPEG por página, sem bibliotecas
+function makePDF(){
+  const enc=new TextEncoder(), parts=[], offs=[]; let len=0;
+  const add=b=>{if(typeof b==='string')b=enc.encode(b); parts.push(b); len+=b.length};
+  const obj=(n,head,stream)=>{offs[n]=len; add(`${n} 0 obj\n${head}\n`); if(stream){add('stream\n');add(stream);add('\nendstream\n')} add('endobj\n')};
+  add('%PDF-1.4\n');
+  obj(1,'<</Type/Catalog/Pages 2 0 R>>');
+  obj(2,`<</Type/Pages/Count ${pages.length}/Kids[${pages.map((_,i)=>`${3+i*3} 0 R`).join(' ')}]>>`);
+  pages.forEach((p,i)=>{
+    const b=3+i*3, W=595, H=Math.round(595*p.h/p.w), c=`q ${W} 0 0 ${H} 0 0 cm /I Do Q`;
+    obj(b,`<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${W} ${H}]/Contents ${b+1} 0 R/Resources<</XObject<</I ${b+2} 0 R>>>>>>`);
+    obj(b+1,`<</Length ${c.length}>>`,c);
+    obj(b+2,`<</Type/XObject/Subtype/Image/Width ${p.w}/Height ${p.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${p.jpg.length}>>`,p.jpg);
+  });
+  const x=len;
+  add(`xref\n0 ${offs.length}\n0000000000 65535 f \n`+offs.slice(1).map(o=>String(o).padStart(10,'0')+' 00000 n \n').join(''));
+  add(`trailer\n<</Size ${offs.length}/Root 1 0 R>>\nstartxref\n${x}\n%%EOF`);
+  return new Blob(parts,{type:'application/pdf'});
+}
+
+$('pdf').onclick=async()=>{
+  const file=new File([makePDF()],'scan.pdf',{type:'application/pdf'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file]}); return}catch(e){if(e.name==='AbortError')return}
+  }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download='scan.pdf'; a.click();
+};
+$('undo').onclick=()=>{pages.pop(); ui()};
+
+navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}})
+  .then(s=>v.srcObject=s)
+  .catch(()=>$('m').textContent='Permita o acesso à câmera (precisa de HTTPS)');
+</script>
+</body>
+</html>
