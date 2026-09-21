@@ -95,8 +95,10 @@ video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 </section>
 
 <div id="qm" hidden><div class="bx">
-  <div id="qr"></div>
+  <div id="qr">Carregando QR code…</div>
   <p>Aponte a câmera do celular para o QR code. As páginas escaneadas aparecem aqui automaticamente.</p>
+  <p style="font-size:12px;color:#888">Não conseguiu ler? Abra este link no celular:</p>
+  <input id="ql" readonly style="width:100%;font-size:12px;padding:6px;box-sizing:border-box;margin-bottom:10px" onclick="this.select()">
   <button id="qc">Fechar</button>
 </div></div>
 <script>
@@ -250,12 +252,13 @@ async function save(p){
 
 // ---------- Câmera ----------
 async function openCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) return openQR();
   $('cam').hidden=false; n=0; last=null; armed=true; $('m').textContent='Enquadre o documento inteiro';
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:4096},height:{ideal:4096}}});
     v.srcObject=stream; camOn=true;
     stream.getVideoTracks()[0].applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
-  }catch(e){$('m').textContent='Permita o acesso à câmera (precisa de HTTPS)'}
+  }catch(e){$('cam').hidden=true; openQR()}
 }
 function closeCam(){
   camOn=false; stream&&stream.getTracks().forEach(t=>t.stop()); v.srcObject=null; $('cam').hidden=true; sync().catch(()=>{});
@@ -271,12 +274,19 @@ setInterval(()=>{
 },150);
 
 // ---------- QR (computador) ----------
-function qr(){const q=qrcode(0,'M'); q.addData(location.href.split('#')[0]+'#s='+rc); q.make(); $('qr').innerHTML=q.createSvgTag(5,0)}
+function qr(){
+  try{const q=qrcode(0,'M'); q.addData(link); q.make(); $('qr').innerHTML=q.createSvgTag(5,0)}
+  catch(e){$('qr').textContent='Não foi possível gerar o QR. Use o link abaixo.'}
+}
+let link;
 function openQR(){
-  $('qm').hidden=false;
+  link=location.href.split('#')[0]+'#s='+rc; $('ql').value=link;
+  $('qm').hidden=false; $('qr').textContent='Carregando QR code…';
   if(window.qrcode) return qr();
   const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
-  s.onload=qr; document.head.append(s);
+  s.onload=qr; s.onerror=()=>{$('qr').textContent='Não foi possível carregar o QR (rede bloqueada). Use o link abaixo.'};
+  document.head.append(s);
+  setTimeout(()=>{if(!window.qrcode) s.onerror()},4000);
 }
 
 // ---------- Sincronização com o Worker ----------
@@ -366,7 +376,7 @@ $('pdf').onclick=async()=>{
 const show=id=>{$('home').hidden=id!=='home'; $('ws').hidden=id!=='ws'};
 $('tile').onclick=()=>{show('ws'); draw()};
 $('hm').onclick=()=>show('home');
-$('scan').onclick=()=>touch?openCam():openQR();
+$('scan').onclick=()=>(touch&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)?openCam():openQR();
 $('done').onclick=closeCam;
 $('bw').onclick=()=>{bw=!bw; $('bw').textContent=bw?'P&B':'Cor'};
 $('qc').onclick=()=>$('qm').hidden=true;
