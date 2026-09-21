@@ -5,52 +5,113 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Scanner PDF</title>
 <style>
-html,body{margin:0;height:100%;background:#000;font:600 16px system-ui,sans-serif;color:#fff;overflow:hidden}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;font:15px system-ui,sans-serif;color:#222;background:#fff;overflow:hidden}
+button{font:inherit;cursor:pointer}
+section,#qm{position:fixed;inset:0}
+.top{height:48px;display:flex;align-items:center;gap:12px;padding:0 14px;font-weight:700;border-bottom:1px solid #ddd;background:#fff}
+.top button{border:0;background:none;font-size:20px;padding:0}
+#home{display:flex;flex-direction:column}
+#hero{flex:1;padding:44px 28px}
+#hero h1{font-size:34px;margin:0 0 12px}
+#hero p{color:#777;max-width:420px;line-height:1.5}
+#tile{height:min(46%,300px);border:0;background:#e6e6e6;color:#222;font-size:22px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:36px 20px 44px}
+#tile b{width:46px;height:46px;border-radius:50%;background:#555;color:#fff;display:grid;place-items:center}
+#ws{display:flex;flex-direction:column;background:#fff}
+.tab{color:#0a5ad4;border-bottom:3px solid #0a5ad4;height:100%;display:flex;align-items:center}
+#st{margin-left:auto;font-weight:400;font-size:13px}
+#mn{flex:1;display:flex;min-height:0;background:#1f2023}
+#tb{width:56px;background:#3b3e44;display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px}
+#tb button{width:44px;height:44px;flex:0 0 auto;border:0;border-radius:6px;background:none;color:#ddd;font-size:22px}
+#tb button:hover{background:#4d5057}
+#pv{flex:1;position:relative;overflow:hidden;touch-action:none}
+#big{position:absolute;left:50%;top:50%;max-width:none;background:#fff;box-shadow:0 0 0 1px #0a5ad4;user-select:none;-webkit-user-drag:none}
+#empty{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:#99a}
+.nv{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:56px;border:0;background:#0007;color:#fff;font-size:24px;z-index:2}
+#cnt{position:absolute;right:12px;bottom:10px;background:#000a;color:#fff;padding:2px 10px;border-radius:12px;font-size:13px}
+#sb{height:118px;background:#2a2c30;display:flex;align-items:center;gap:10px;padding:0 10px;color:#fff}
+#sb label{display:flex;align-items:center;gap:8px;font-size:14px}
+#th{flex:1;height:100%;display:flex;gap:8px;align-items:center;overflow-x:auto;scrollbar-width:none}
+.t{position:relative;flex:0 0 auto;width:66px;height:88px;background:#3b3e44;border:2px solid transparent}
+.t.on{border-color:#0a5ad4}
+.t img{width:100%;height:100%;object-fit:contain;display:block}
+.t input{position:absolute;top:2px;left:2px}
+.ar{border:0;background:none;color:#aaa;font-size:26px}
+#ft{height:64px;background:#efefef;display:flex;justify-content:center;align-items:center;gap:12px}
+#ft button{padding:10px 26px;border:1px solid #bbb;background:#fff}
+#ft #pdf{background:#22c55e;border-color:#22c55e;color:#04220f;font-weight:600}
+#ft #pdf:disabled{opacity:.4}
+#cam{background:#000;color:#fff}
 video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 #f{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 10px #e5322d;transition:box-shadow .2s}
 #f.g{box-shadow:inset 0 0 0 10px #22c55e}
 #w{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
 #w.on{opacity:.85;transition:none}
-#b{position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;justify-content:center;padding:18px 18px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#000a)}
-button{font:inherit;color:#fff;background:#222c;border:1px solid #fff5;border-radius:999px;padding:12px 20px}
-button:disabled{opacity:.35}
-#m{position:absolute;top:24px;left:0;right:0;text-align:center;text-shadow:0 1px 4px #000}
-#pdf,#dl{background:#22c55e;border-color:#22c55e;color:#04220f}
-.r video,.r #f,.r #w,.r #m,.r #b{display:none}
-#r{position:absolute;inset:0;overflow:auto;padding:28px;box-sizing:border-box;text-align:center}
-#r h1{font-size:20px;margin:0 0 18px}
-#qr{display:inline-block;background:#fff;padding:14px;border-radius:12px}
-#qr svg{display:block;width:220px;height:220px}
-#g{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:24px 0}
-#g div{position:relative}#g img{height:170px;border-radius:6px;display:block}
-#g button{position:absolute;top:6px;right:6px;padding:2px 9px}
-#r a{color:#9ab}
+#m{position:absolute;top:24px;left:0;right:0;text-align:center;font-weight:600;padding:0 16px;text-shadow:0 1px 4px #000}
+#cb{position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;justify-content:center;padding:18px 18px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#000a)}
+#cb button{color:#fff;background:#222c;border:1px solid #fff5;border-radius:999px;padding:12px 22px;font-weight:600}
+#qm{background:#000a;display:grid;place-items:center;z-index:9}
+.bx{background:#fff;padding:24px;border-radius:12px;text-align:center;max-width:320px}
+#qr svg{width:220px;height:220px;display:block;margin:0 auto 12px}
+.bx button{padding:8px 22px;border:1px solid #bbb;background:#fff;border-radius:6px}
+@media(max-width:640px){#mn{flex-direction:column}#tb{width:auto;flex-direction:row;justify-content:center;overflow-x:auto;padding:4px 6px}#sb label span{display:none}}
 </style>
 </head>
 <body>
-<video id="v" playsinline muted autoplay></video>
-<div id="f"></div><div id="w"></div>
-<div id="m">Enquadre o documento inteiro</div>
-<div id="b">
-  <button id="bw">P&B</button>
-  <button id="undo" disabled>Desfazer</button>
-  <button id="pdf" disabled>Gerar PDF (0)</button>
-</div>
-<div id="r" hidden>
-  <h1>Scanner PDF</h1>
+<section id="home">
+  <div class="top">⌂ Scanner PDF</div>
+  <div id="hero"><h1>Scanner PDF</h1><p>Digitalize documentos com a câmera do celular e receba as páginas no computador, prontas para gerar o PDF.</p></div>
+  <button id="tile">Digitalizar<b>→</b></button>
+</section>
+
+<section id="ws" hidden>
+  <div class="top"><button id="hm" title="Início">⌂</button><span class="tab">Digitalizar</span><span id="st"></span></div>
+  <div id="mn">
+    <nav id="tb">
+      <button id="rl" title="Girar à esquerda">↺</button><button id="rr" title="Girar à direita">↻</button>
+      <button id="fh" title="Espelhar horizontal">⇋</button><button id="fv" title="Espelhar vertical">⇅</button>
+      <button id="zi" title="Aumentar zoom">+</button><button id="zo" title="Diminuir zoom">−</button>
+      <button id="rs" title="Desfazer alterações">↶</button><button id="del" title="Excluir página">🗑</button>
+    </nav>
+    <div id="pv">
+      <img id="big" hidden alt="">
+      <div id="empty">Nenhuma página ainda.<br>Toque em Digitalizar para começar.</div>
+      <button class="nv" id="pp" style="left:0">‹</button><button class="nv" id="pn" style="right:0">›</button>
+      <span id="cnt"></span>
+    </div>
+  </div>
+  <div id="sb">
+    <label><input type="checkbox" id="all"><span>Selec tudo</span></label>
+    <button class="ar" id="sl">‹</button><div id="th"></div><button class="ar" id="sr">›</button>
+  </div>
+  <div id="ft"><button id="scan">Digitalizar</button><button id="pdf" disabled>Gerar PDF (0)</button></div>
+</section>
+
+<section id="cam" hidden>
+  <video id="v" playsinline muted autoplay></video>
+  <div id="f"></div><div id="w"></div><div id="m"></div>
+  <div id="cb"><button id="bw">P&amp;B</button><button id="done">Concluir</button></div>
+</section>
+
+<div id="qm" hidden><div class="bx">
   <div id="qr"></div>
-  <p id="qt">Aponte a câmera do celular para o QR code</p>
-  <div id="g"></div>
-  <button id="dl" disabled>Baixar PDF (0)</button>
-  <p><a href="#s=local">Usar a câmera deste aparelho</a></p>
-</div>
+  <p>Aponte a câmera do celular para o QR code. As páginas escaneadas aparecem aqui automaticamente.</p>
+  <button id="qc">Fechar</button>
+</div></div>
 <script>
 const API='https://snannerapi.williamamorim126.workers.dev'; // URL do Worker da API
-const $=id=>document.getElementById(id), v=$('v'), f=$('f'), pages=[];
-const code=(location.hash.match(/^#s=(\w+)/)||[])[1], up=code&&code!=='local';
+const $=id=>document.getElementById(id), v=$('v'), f=$('f'), touch=matchMedia('(pointer:coarse)').matches;
 const b64=d=>Uint8Array.from(atob(d.split(',')[1]),c=>c.charCodeAt(0));
 const sc=document.createElement('canvas'), sx=sc.getContext('2d',{willReadFrequently:true});
-let bw=true, last=null, since=0, armed=true, busy=false;
+const pg=new Map(), sel=new Set(), ids=()=>[...pg.keys()].sort((a,b)=>a-b);
+let bw=true, last=null, since=0, armed=true, busy=false, camOn=false, stream, n=0, cur, z=1, px=0, py=0, syncing=false;
+
+// Sessão: o QR leva o código; cada aparelho guarda para continuar depois
+let rc=(location.hash.match(/^#s=([a-z0-9]{16,40})$/)||[])[1];
+try{rc=rc||localStorage.rc; if(rc) localStorage.rc=rc}catch(e){}
+if(!rc){rc=[...crypto.getRandomValues(new Uint8Array(20))].map(b=>(b%36).toString(36)).join(''); try{localStorage.rc=rc}catch(e){}}
+if(location.hash) history.replaceState(null,'',location.pathname+location.search);
 
 // Detecta a maior região clara no centro; "ok" só se estiver inteira dentro do quadro
 function detect(){
@@ -150,32 +211,14 @@ async function capture(P){
   busy=true; armed=false;
   const c=warp(P,await shoot());
   let url=c.toDataURL('image/jpeg',.88); if(url.length>1.8e6) url=c.toDataURL('image/jpeg',.7);
-  const pg={w:c.width,h:c.height,jpg:b64(url)};
-  pages.push(pg); ui(); navigator.vibrate&&navigator.vibrate(60);
-  if(up) pg.id=fetch(`${API}/${code}`,{method:'POST',body:url})
-    .then(async r=>{if(!r.ok) throw Error('HTTP '+r.status+' '+(await r.text()).slice(0,70)); return (await r.json()).id})
-    .catch(e=>{$('m').textContent='Falha ao enviar ('+(API.includes('SEU-WORKER')?'configure a URL do Worker no index.html':e.message)+'). Página salva só no celular'});
-  $('w').classList.add('on'); setTimeout(()=>$('w').classList.remove('on'),60);
+  $('w').classList.add('on'); setTimeout(()=>$('w').classList.remove('on'),60); navigator.vibrate&&navigator.vibrate(60);
+  try{
+    const r=await fetch(`${API}/${rc}`,{method:'POST',body:url});
+    if(!r.ok) throw Error('HTTP '+r.status+' '+(await r.text()).slice(0,70));
+    n++; $('m').textContent=`Página ${n} enviada. Vire a folha ou toque em Concluir`; sync().catch(()=>{});
+  }catch(e){$('m').textContent='Falha ao enviar ('+e.message+')'}
   busy=false;
 }
-
-function ui(){
-  $('pdf').textContent=`Gerar PDF (${pages.length})`;
-  $('pdf').disabled=$('undo').disabled=!pages.length;
-  $('m').textContent=pages.length?(up?'Enviada ao computador. Vire a folha':'Página salva. Vire a folha ou gere o PDF'):'Enquadre o documento inteiro';
-}
-
-code&&setInterval(()=>{
-  if(busy) return;
-  const P=detect();
-  f.className=P?'g':'';
-  if(!P){last=null; armed=true; return}
-  if(!armed) return;
-  const now=performance.now();
-  if(last&&P.every((p,i)=>Math.abs(p[0]-last[i][0])<.012&&Math.abs(p[1]-last[i][1])<.012)){
-    if(now-since>900) capture(P);
-  } else {since=now; last=P}
-},150);
 
 // PDF mínimo: uma imagem JPEG por página, sem bibliotecas
 function makePDF(pages){
@@ -199,55 +242,134 @@ function makePDF(pages){
 
 async function save(p){
   const file=new File([makePDF(p)],'scan.pdf',{type:'application/pdf'});
-  if(code&&navigator.canShare&&navigator.canShare({files:[file]})){
+  if(touch&&navigator.canShare&&navigator.canShare({files:[file]})){
     try{await navigator.share({files:[file]}); return}catch(e){if(e.name==='AbortError')return}
   }
   const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download='scan.pdf'; a.click();
 };
-$('bw').onclick=()=>{bw=!bw; $('bw').textContent=bw?'P&B':'Cor'};
-$('pdf').onclick=()=>save(pages);
-$('undo').onclick=()=>{const p=pages.pop(); p.id&&p.id.then(i=>i&&fetch(`${API}/${code}/${i}`,{method:'DELETE'})); ui()};
 
-if(code)navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:4096},height:{ideal:4096}}})
-  .then(s=>{v.srcObject=s; s.getVideoTracks()[0].applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{})})
-  .catch(()=>$('m').textContent='Permita o acesso à câmera (precisa de HTTPS)');
-onhashchange=()=>location.reload();
-if(!code)receiver();
+// ---------- Câmera ----------
+async function openCam(){
+  $('cam').hidden=false; n=0; last=null; armed=true; $('m').textContent='Enquadre o documento inteiro';
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:4096},height:{ideal:4096}}});
+    v.srcObject=stream; camOn=true;
+    stream.getVideoTracks()[0].applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
+  }catch(e){$('m').textContent='Permita o acesso à câmera (precisa de HTTPS)'}
+}
+function closeCam(){
+  camOn=false; stream&&stream.getTracks().forEach(t=>t.stop()); v.srcObject=null; $('cam').hidden=true; sync().catch(()=>{});
+}
+setInterval(()=>{
+  if(!camOn||busy) return;
+  const P=detect(); f.className=P?'g':'';
+  if(!P){last=null; armed=true; return}
+  if(!armed) return;
+  const now=performance.now();
+  if(last&&P.every((p,i)=>Math.abs(p[0]-last[i][0])<.012&&Math.abs(p[1]-last[i][1])<.012)){if(now-since>900) capture(P)}
+  else{since=now; last=P}
+},150);
 
-// Modo computador: mostra o QR e recebe as páginas do celular
-function receiver(){
-  document.body.className='r'; $('r').hidden=false;
-  let rc=localStorage.rc;
-  if(!rc) localStorage.rc=rc=[...crypto.getRandomValues(new Uint8Array(20))].map(b=>(b%36).toString(36)).join('');
-  const T=$('qt').textContent, have=new Map(), list=()=>[...have].sort((a,b)=>a[0]-b[0]).map(e=>e[1]),
-    cnt=()=>{$('dl').textContent=`Baixar PDF (${have.size})`; $('dl').disabled=!have.size};
-  const s=document.createElement('script');
-  s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
-  s.onload=()=>{const q=qrcode(0,'M'); q.addData(location.href.split('#')[0]+'#s='+rc); q.make(); $('qr').innerHTML=q.createSvgTag(5,0)};
-  document.head.append(s);
-  async function sync(){
+// ---------- QR (computador) ----------
+function qr(){const q=qrcode(0,'M'); q.addData(location.href.split('#')[0]+'#s='+rc); q.make(); $('qr').innerHTML=q.createSvgTag(5,0)}
+function openQR(){
+  $('qm').hidden=false;
+  if(window.qrcode) return qr();
+  const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+  s.onload=qr; document.head.append(s);
+}
+
+// ---------- Sincronização com o Worker ----------
+async function sync(){
+  if(syncing) return; syncing=true;
+  try{
     const r=await fetch(`${API}/${rc}`);
     if(!r.ok) throw Error('HTTP '+r.status+' '+(await r.text()).slice(0,70));
-    const ids=await r.json();
-    for(const [id,p] of have) if(!ids.includes(id)){p.el.remove(); have.delete(id)}
-    for(const id of ids) if(!have.has(id)){
-      const d=await (await fetch(`${API}/${rc}/${id}`)).text(), im=new Image(),
-        el=document.createElement('div'), x=document.createElement('button');
-      im.src=d; await im.decode();
-      x.textContent='✕';
-      x.onclick=()=>{fetch(`${API}/${rc}/${id}`,{method:'DELETE'}); el.remove(); have.delete(id); cnt()};
-      el.append(im,x); $('g').append(el);
-      have.set(id,{w:im.naturalWidth,h:im.naturalHeight,jpg:b64(d),el});
+    const L=await r.json(); let ch=false;
+    for(const id of ids()) if(!L.includes(id)){pg.delete(id); sel.delete(id); ch=true}
+    for(const id of L) if(!pg.has(id)){
+      const d=await (await fetch(`${API}/${rc}/${id}`)).text(), im=new Image(); im.src=d; await im.decode();
+      pg.set(id,{id,im,url:d,w:im.naturalWidth,h:im.naturalHeight,jpg:b64(d),rot:0,fx:0,fy:0});
+      sel.add(id); cur=id; z=1; px=py=0; ch=true;
     }
-    cnt();
-  }
-  (async function loop(){
-    try{await sync(); $('qt').textContent=T}
-    catch(e){$('qt').textContent='Sem conexão com o servidor ('+(API.includes('SEU-WORKER')?'configure a URL do Worker no index.html':e.message)+')'}
-    setTimeout(loop,2000);
-  })();
-  $('dl').onclick=()=>save(list());
+    if(ch){if(!pg.has(cur)) cur=ids().pop(); draw()}
+  }finally{syncing=false}
 }
+(async function loop(){
+  if(!document.hidden) try{await sync(); $('st').textContent='● Online'; $('st').style.color='#22a35a'}
+  catch(e){$('st').textContent='Sem conexão ('+e.message+')'; $('st').style.color='#e5322d'}
+  setTimeout(loop,2000);
+})();
+
+// ---------- Área de trabalho ----------
+function draw(){
+  const L=ids(), p=pg.get(cur);
+  $('th').replaceChildren(...L.map(id=>{
+    const el=document.createElement('div'), t=new Image(), cb=document.createElement('input');
+    el.className='t'+(id===cur?' on':''); t.src=pg.get(id).url; cb.type='checkbox'; cb.checked=sel.has(id);
+    cb.onclick=e=>{e.stopPropagation(); cb.checked?sel.add(id):sel.delete(id); draw()};
+    el.onclick=()=>{cur=id; z=1; px=py=0; draw()};
+    el.append(t,cb); return el;
+  }));
+  const on=$('th').querySelector('.on'); on&&on.scrollIntoView({inline:'center',block:'nearest'});
+  $('pdf').textContent=`Gerar PDF (${sel.size})`; $('pdf').disabled=!sel.size;
+  $('all').checked=!!L.length&&sel.size===L.length;
+  $('cnt').textContent=L.length?`${L.indexOf(cur)+1} / ${L.length}`:'';
+  $('empty').hidden=!!L.length; $('big').hidden=!p;
+  if(p){$('big').src=p.url; view()}
+}
+function view(){
+  const p=pg.get(cur); if(!p) return;
+  const b=$('pv'), r=p.rot%180, k=Math.min(b.clientWidth/(r?p.h:p.w),b.clientHeight/(r?p.w:p.h))*.96, i=$('big');
+  i.style.width=p.w*k+'px'; i.style.height=p.h*k+'px';
+  i.style.transform=`translate(-50%,-50%) translate(${px}px,${py}px) scale(${z}) scale(${p.fx?-1:1},${p.fy?-1:1}) rotate(${p.rot}deg)`;
+}
+function step(d){const L=ids(), i=L.indexOf(cur)+d; if(i>=0&&i<L.length){cur=L[i]; z=1; px=py=0; draw()}}
+const T=(id,fn)=>$(id).onclick=()=>{const p=pg.get(cur); if(p){fn(p); view()}};
+T('rl',p=>p.rot=(p.rot+270)%360); T('rr',p=>p.rot=(p.rot+90)%360);
+T('fh',p=>p.fx^=1); T('fv',p=>p.fy^=1);
+T('zi',()=>z=Math.min(6,z*1.3)); T('zo',()=>{z=Math.max(1,z/1.3); if(z===1)px=py=0});
+T('rs',p=>{p.rot=p.fx=p.fy=0; z=1; px=py=0});
+$('del').onclick=()=>{
+  if(!pg.has(cur)) return;
+  const id=cur, L=ids(), i=L.indexOf(id);
+  fetch(`${API}/${rc}/${id}`,{method:'DELETE'}).catch(()=>{});
+  pg.delete(id); sel.delete(id); cur=L[i+1]??L[i-1]; draw();
+};
+$('pp').onclick=()=>step(-1); $('pn').onclick=()=>step(1);
+$('sl').onclick=()=>$('th').scrollBy({left:-240,behavior:'smooth'});
+$('sr').onclick=()=>$('th').scrollBy({left:240,behavior:'smooth'});
+$('all').onchange=e=>{sel.clear(); if(e.target.checked) ids().forEach(i=>sel.add(i)); draw()};
+onkeydown=e=>{if(!$('ws').hidden&&!camOn){if(e.key==='ArrowLeft')step(-1); if(e.key==='ArrowRight')step(1)}};
+onresize=view;
+
+// arrastar para mover (com zoom) e roda do mouse para zoom
+const pv=$('pv'); let dr=null;
+pv.onpointerdown=e=>{if(e.target.tagName==='BUTTON') return; dr=[e.clientX-px,e.clientY-py]; pv.setPointerCapture(e.pointerId)};
+pv.onpointermove=e=>{if(dr&&z>1){px=e.clientX-dr[0]; py=e.clientY-dr[1]; view()}};
+pv.onpointerup=pv.onpointercancel=()=>dr=null;
+pv.onwheel=e=>{e.preventDefault(); z=Math.min(6,Math.max(1,z*(e.deltaY<0?1.15:1/1.15))); if(z===1)px=py=0; view()};
+
+// ---------- PDF ----------
+async function finalPage(p){
+  if(!p.rot&&!p.fx&&!p.fy) return {w:p.w,h:p.h,jpg:p.jpg};
+  const o=p.rot%180, W=o?p.h:p.w, H=o?p.w:p.h, c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d'); x.translate(W/2,H/2); x.scale(p.fx?-1:1,p.fy?-1:1); x.rotate(p.rot*Math.PI/180); x.drawImage(p.im,-p.w/2,-p.h/2);
+  return {w:W,h:H,jpg:b64(c.toDataURL('image/jpeg',.9))};
+}
+$('pdf').onclick=async()=>{
+  const L=ids().filter(i=>sel.has(i)); if(!L.length) return;
+  save(await Promise.all(L.map(i=>finalPage(pg.get(i)))));
+};
+
+// ---------- Navegação ----------
+const show=id=>{$('home').hidden=id!=='home'; $('ws').hidden=id!=='ws'};
+$('tile').onclick=()=>{show('ws'); draw()};
+$('hm').onclick=()=>show('home');
+$('scan').onclick=()=>touch?openCam():openQR();
+$('done').onclick=closeCam;
+$('bw').onclick=()=>{bw=!bw; $('bw').textContent=bw?'P&B':'Cor'};
+$('qc').onclick=()=>$('qm').hidden=true;
 </script>
 </body>
 </html>
