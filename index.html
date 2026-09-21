@@ -32,6 +32,7 @@ button:disabled{opacity:.35}
 <div id="f"></div><div id="w"></div>
 <div id="m">Enquadre o documento inteiro</div>
 <div id="b">
+  <button id="bw">P&B</button>
   <button id="undo" disabled>Desfazer</button>
   <button id="pdf" disabled>Gerar PDF (0)</button>
 </div>
@@ -44,12 +45,12 @@ button:disabled{opacity:.35}
   <p><a href="#s=local">Usar a câmera deste aparelho</a></p>
 </div>
 <script>
-const API=scanner-app.williamamorim126.workers.dev/; // troque pela URL do seu Worker
+const API='https://SEU-WORKER.workers.dev'; // troque pela URL do seu Worker
 const $=id=>document.getElementById(id), v=$('v'), f=$('f'), pages=[];
 const code=(location.hash.match(/^#s=(\w+)/)||[])[1], up=code&&code!=='local';
 const b64=d=>Uint8Array.from(atob(d.split(',')[1]),c=>c.charCodeAt(0));
 const sc=document.createElement('canvas'), sx=sc.getContext('2d',{willReadFrequently:true});
-let last=null, since=0, armed=true, busy=false;
+let bw=true, last=null, since=0, armed=true, busy=false;
 
 // Detecta a maior região clara no centro; "ok" só se estiver inteira dentro do quadro
 function detect(){
@@ -89,6 +90,27 @@ function detect(){
   return inside&&top.n/A>.75?P:null;
 }
 
+// Efeito "scanner a laser": tira sombra e fundo, papel branco e texto bem preto
+function clean(D,W,H,bw){
+  const B=32, gw=Math.ceil(W/B), gh=Math.ceil(H/B), G=new Uint8Array(W*H); let bg=new Float32Array(gw*gh);
+  const K=i=>((i/W/B)|0)*gw+(((i%W)/B)|0);
+  for(let i=0;i<W*H;i++){const e=i*4; G[i]=(D[e]*77+D[e+1]*150+D[e+2]*29)>>8; const k=K(i); if(G[i]>bg[k])bg[k]=G[i]}
+  for(let r=0;r<2;r++){
+    const n=new Float32Array(bg.length);
+    for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){
+      let t=0,c=0;
+      for(let dy=-1;dy<2;dy++)for(let dx=-1;dx<2;dx++){const yy=y+dy,xx=x+dx; if(yy>=0&&yy<gh&&xx>=0&&xx<gw){t+=bg[yy*gw+xx];c++}}
+      n[y*gw+x]=t/c;
+    }
+    bg=n;
+  }
+  const f=(v,b)=>((v/b-.55)/.3)*255;
+  for(let i=0;i<W*H;i++){
+    const e=i*4, b=Math.max(bg[K(i)]*.97,40);
+    if(bw) D[e]=D[e+1]=D[e+2]=f(G[i],b); else for(let c=0;c<3;c++) D[e+c]=f(D[e+c],b);
+  }
+}
+
 function warp(P,c){
   const W0=c.width, H0=c.height, src=c.getContext('2d').getImageData(0,0,W0,H0).data;
   const [tl,tr,br,bl]=P.map(p=>[p[0]*W0,p[1]*H0]), L=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
@@ -106,14 +128,7 @@ function warp(P,c){
       D[e]=src[s]; D[e+1]=src[s+1]; D[e+2]=src[s+2]; D[e+3]=255;
     }
   }
-  // auto-níveis por canal: papel vira branco, texto fica mais escuro
-  for(let ch=0;ch<3;ch++){
-    const h=new Uint32Array(256); for(let e=ch;e<D.length;e+=16) h[D[e]]++;
-    let n=0,a=-1,b=255; const tot=D.length/16;
-    for(let i=0;i<256;i++){n+=h[i]; if(a<0&&n>tot*.01)a=i; if(n>tot*.6){b=i;break}}
-    const hi=Math.max(b*.95,a+30), l=new Uint8ClampedArray(256).map((_,i)=>(i-a)*255/(hi-a));
-    for(let e=ch;e<D.length;e+=4) D[e]=l[D[e]];
-  }
+  clean(D,W,H,bw);
   ox.putImageData(out,0,0); return o;
 }
 
@@ -188,6 +203,7 @@ async function save(p){
   }
   const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download='scan.pdf'; a.click();
 };
+$('bw').onclick=()=>{bw=!bw; $('bw').textContent=bw?'P&B':'Cor'};
 $('pdf').onclick=()=>save(pages);
 $('undo').onclick=()=>{const p=pages.pop(); p.id&&p.id.then(i=>i&&fetch(`${API}/${code}/${i}`,{method:'DELETE'})); ui()};
 
