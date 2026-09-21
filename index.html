@@ -44,7 +44,7 @@ button:disabled{opacity:.35}
   <p><a href="#s=local">Usar a câmera deste aparelho</a></p>
 </div>
 <script>
-const API='https://SEU-WORKER.workers.dev'; // troque pela URL do seu Worker
+const API=scanner-app.williamamorim126.workers.dev/; // troque pela URL do seu Worker
 const $=id=>document.getElementById(id), v=$('v'), f=$('f'), pages=[];
 const code=(location.hash.match(/^#s=(\w+)/)||[])[1], up=code&&code!=='local';
 const b64=d=>Uint8Array.from(atob(d.split(',')[1]),c=>c.charCodeAt(0));
