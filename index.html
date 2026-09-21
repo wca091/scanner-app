@@ -152,8 +152,9 @@ async function capture(P){
   let url=c.toDataURL('image/jpeg',.88); if(url.length>1.8e6) url=c.toDataURL('image/jpeg',.7);
   const pg={w:c.width,h:c.height,jpg:b64(url)};
   pages.push(pg); ui(); navigator.vibrate&&navigator.vibrate(60);
-  if(up) pg.id=fetch(`${API}/${code}`,{method:'POST',body:url}).then(r=>r.json()).then(j=>j.id)
-    .catch(()=>{$('m').textContent='Falha ao enviar. Página salva só no celular'});
+  if(up) pg.id=fetch(`${API}/${code}`,{method:'POST',body:url})
+    .then(async r=>{if(!r.ok) throw Error('HTTP '+r.status+' '+(await r.text()).slice(0,70)); return (await r.json()).id})
+    .catch(e=>{$('m').textContent='Falha ao enviar ('+(API.includes('SEU-WORKER')?'configure a URL do Worker no index.html':e.message)+'). Página salva só no celular'});
   $('w').classList.add('on'); setTimeout(()=>$('w').classList.remove('on'),60);
   busy=false;
 }
@@ -225,7 +226,9 @@ function receiver(){
   s.onload=()=>{const q=qrcode(0,'M'); q.addData(location.href.split('#')[0]+'#s='+rc); q.make(); $('qr').innerHTML=q.createSvgTag(5,0)};
   document.head.append(s);
   async function sync(){
-    const ids=await (await fetch(`${API}/${rc}`)).json();
+    const r=await fetch(`${API}/${rc}`);
+    if(!r.ok) throw Error('HTTP '+r.status+' '+(await r.text()).slice(0,70));
+    const ids=await r.json();
     for(const [id,p] of have) if(!ids.includes(id)){p.el.remove(); have.delete(id)}
     for(const id of ids) if(!have.has(id)){
       const d=await (await fetch(`${API}/${rc}/${id}`)).text(), im=new Image(),
@@ -240,7 +243,7 @@ function receiver(){
   }
   (async function loop(){
     try{await sync(); $('qt').textContent=T}
-    catch(e){$('qt').textContent='Sem conexão com o servidor. Confira a URL do Worker.'}
+    catch(e){$('qt').textContent='Sem conexão com o servidor ('+(API.includes('SEU-WORKER')?'configure a URL do Worker no index.html':e.message)+')'}
     setTimeout(loop,2000);
   })();
   $('dl').onclick=()=>save(list());
